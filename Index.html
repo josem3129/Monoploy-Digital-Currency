@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monopoly Family Banker & Property Manager</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        monopoly: {
+                            green: '#0b4f34',
+                            darkgreen: '#073322',
+                            gold: '#d4af37',
+                            lightgold: '#f4e8c1',
+                            cream: '#fcfbfa'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .dark .glass-panel { background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(10px); }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-100 h-full flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+    <header class="bg-monopoly-green dark:bg-slate-950 text-white shadow-md border-b border-emerald-800/40 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-monopoly-gold text-slate-900 p-2.5 rounded-xl shadow-inner font-bold flex items-center justify-center">
+                    <i class="fa-solid fa-landmark text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight flex items-center gap-2">
+                        Monopoly Banker
+                        <span id="room-badge" class="hidden text-xs bg-emerald-800/80 border border-emerald-600/50 text-emerald-100 px-2 py-0.5 rounded-full font-medium">Room: <span id="current-room-code" class="font-mono font-bold">---</span></span>
+                    </h1>
+                    <p class="text-xs text-emerald-200/80">Digital Bank & Property Portfolio Manager</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="app.openSettingsModal()" class="p-2 rounded-lg bg-emerald-800/50 hover:bg-emerald-700/60 text-emerald-100 transition text-sm flex items-center gap-1.5" title="Firebase Settings">
+                    <i class="fa-solid fa-gear"></i>
+                    <span class="hidden sm:inline">Settings</span>
+                </button>
+                <button onclick="app.leaveRoom()" id="leave-room-btn" class="hidden p-2 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white transition text-sm flex items-center gap-1.5">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden sm:inline">Leave Room</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 overflow-y-auto">
+
+        <!-- LOBBY VIEW -->
+        <div id="view-lobby" class="max-w-md mx-auto my-auto py-8">
+            <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-6 sm:p-8">
+                <div class="text-center mb-6">
+                    <div class="inline-flex p-3 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 mb-3 text-2xl">
+                        <i class="fa-solid fa-dice"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold tracking-tight">Family Game Night</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Create a new room or join an existing game code.</p>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Your Player Name</label>
+                        <input type="text" id="player-nickname" placeholder="e.g. Uncle Bob" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium">
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                        <button onclick="app.createRoom()" class="w-full py-3.5 px-4 bg-monopoly-green hover:bg-emerald-800 text-white font-semibold rounded-xl shadow-lg shadow-emerald-900/20 transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-plus-circle"></i> Create New Game Room
+                        </button>
+                        
+                        <div class="flex items-center my-2">
+                            <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                            <span class="px-3 text-xs uppercase tracking-wider text-slate-400 font-medium">or join</span>
+                            <div class="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <input type="text" id="join-room-code" placeholder="Enter Room Code" class="flex-1 uppercase font-mono px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium">
+                            <button onclick="app.joinRoom()" class="px-5 py-3 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-semibold rounded-xl transition text-sm shadow-md">
+                                Join
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 text-center">
+                    <p class="text-xs text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-cloud text-emerald-500"></i> Connected via Firebase Realtime Sync
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD VIEW (GAME ROOM ACTIVE) -->
+        <div id="view-dashboard" class="hidden space-y-6">
+            
+            <!-- Room Controls & Quick Actions Bar -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bank Reserve</span>
+                        <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1" id="bank-reserve">$15,820</div>
+                    </div>
+                    <div class="mt-3 flex gap-2">
+                        <button onclick="app.openBankModal('collect')" class="flex-1 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 py-2 rounded-xl text-xs font-semibold transition">
+                            <i class="fa-solid fa-arrow-down"></i> Collect $200
+                        </button>
+                        <button onclick="app.openBankModal('pay')" class="flex-1 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 py-2 rounded-xl text-xs font-semibold transition">
+                            <i class="fa-solid fa-arrow-up"></i> Pay Bank
+                        </button>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm md:col-span-3 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
+                            <i class="fa-solid fa-bolt text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm">Quick Actions Hub</h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Transfer money, manage properties, or conduct auctions.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="app.openTransferModal()" class="px-4 py-2.5 bg-monopoly-green hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-right-left"></i> Transfer Money
+                        </button>
+                        <button onclick="app.openBuyPropertyModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-semibold shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-house-chimney"></i> Buy Property
+                        </button>
+                        <button onclick="app.openAuctionModal()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-gavel"></i> Auction
+                        </button>
+                        <button onclick="app.openDiceModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-dice"></i> Roll Dice
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Grid: Players & Properties / Activity Feed -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left 2 Cols: Players & Portfolios -->
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-users text-emerald-600"></i> Players & Portfolios
+                        </h3>
+                        <button onclick="app.openAddPlayerModal()" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-user-plus"></i> Add Player
+                        </button>
+                    </div>
+
+                    <div id="players-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+
+                <!-- Right Col: Board Deeds & Live Feed -->
+                <div class="space-y-6">
+                    <!-- Board / Deeds Navigator -->
+                    <div class="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-city text-amber-500"></i> Property Directory
+                            </h3>
+                            <button onclick="app.openPropertyManagerModal()" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                                View All
+                            </button>
+                        </div>
+                        <div class="space-y-2 max-h-72 overflow-y-auto pr-1" id="property-summary-list">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Live Activity Log -->
+                    <div class="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-80">
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-200 dark:border-slate-800">
+                            <h3 class="font-bold text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-clock-rotate-left text-indigo-500"></i> Transaction Log
+                            </h3>
+                            <span class="text-xs text-slate-400">Live Sync</span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs" id="activity-log-container">
+                            <!-- Rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- SETTINGS MODAL -->
+    <div id="modal-settings" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-emerald-600"></i> Firebase Configuration
+                </h3>
+                <button onclick="app.closeModal('modal-settings')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Paste your Firebase project configuration credentials below to enable multi-device sync across phones and tablets.
+            </p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Firebase Config JSON / String</label>
+                    <textarea id="firebase-config-input" rows="6" placeholder='{ "apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..." }' class="w-full font-mono text-xs px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+                <div class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-3 rounded-xl text-xs text-amber-800 dark:text-amber-300">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> If left empty, the app runs locally in memory so you can test right away!
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="app.closeModal('modal-settings')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 transition">Cancel</button>
+                <button onclick="app.saveFirebaseConfig()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow">Save & Connect</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRANSFER MONEY MODAL -->
+    <div id="modal-transfer" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-right-left text-emerald-600"></i> Transfer Money
+                </h3>
+                <button onclick="app.closeModal('modal-transfer')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">From Payer</label>
+                    <select id="transfer-from" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <option value="bank">The Bank</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">To Recipient</label>
+                    <select id="transfer-to" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <option value="bank">The Bank</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Amount ($)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
+                        <input type="number" id="transfer-amount" min="1" placeholder="200" class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Note / Reason</label>
+                    <input type="text" id="transfer-note" placeholder="Passing GO, Rent, Birthday gift..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="app.closeModal('modal-transfer')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 transition">Cancel</button>
+                <button onclick="app.executeTransfer()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow">Complete Transfer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUY PROPERTY MODAL -->
+    <div id="modal-buy-property" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-house-chimney text-amber-600"></i> Purchase Property from Bank
+                </h3>
+                <button onclick="app.closeModal('modal-buy-property')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4 overflow-y-auto flex-1 pr-1">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Buyer (Player)</label>
+                    <select id="buy-player-select" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Select Available Property</label>
+                    <select id="buy-property-select" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                <div id="property-details-preview" class="p-3 bg-slate-100 dark:bg-slate-800/60 rounded-xl text-xs space-y-1">
+                    <p class="text-slate-400">Select a property to view price, rent, and mortgage details.</p>
+                </div>
+            </div>
+            <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-2">
+                <button onclick="app.closeModal('modal-buy-property')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 transition">Cancel</button>
+                <button onclick="app.executeBuyProperty()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition shadow">Buy Property</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD PLAYER MODAL -->
+    <div id="modal-add-player" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-emerald-600"></i> Add New Player
+                </h3>
+                <button onclick="app.closeModal('modal-add-player')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Player Name</label>
+                    <input type="text" id="new-player-name" placeholder="e.g. Aunt Sarah" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Token Icon</label>
+                    <select id="new-player-token" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <option value="fa-hat-cowboy">Top Hat 🎩</option>
+                        <option value="fa-car">Car 🚗</option>
+                        <option value="fa-dog">Dog 🐕</option>
+                        <option value="fa-ship">Battleship 🚢</option>
+                        <option value="fa-shoe-prints">Boot 🥾</option>
+                        <option value="fa-cat">Cat 🐈</option>
+                        <option value="fa-dice-five">Thimble 🎲</option>
+                        <option value="fa-wheelbarrow">Wheelbarrow 🛒</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Starting Cash ($)</label>
+                    <input type="number" id="new-player-cash" value="1500" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-bold">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="app.closeModal('modal-add-player')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 transition">Cancel</button>
+                <button onclick="app.executeAddPlayer()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow">Add Player</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLAYER DETAIL MODAL (MANAGE CASH, PROPERTIES, HOUSES) -->
+    <div id="modal-player-detail" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div id="detail-player-avatar" class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base" id="detail-player-name">Player Name</h3>
+                        <p class="text-xs text-slate-500" id="detail-player-subtitle">Net Worth: $1,500</p>
+                    </div>
+                </div>
+                <button onclick="app.closeModal('modal-player-detail')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-5 overflow-y-auto flex-1 pr-1">
+                <!-- Cash Adjustment Section -->
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Cash Balance</span>
+                        <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400" id="detail-player-cash">$1,500</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="app.quickAdjustCash(100)" class="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-lg text-xs font-bold hover:bg-emerald-200 transition">+$100</button>
+                        <button onclick="app.quickAdjustCash(500)" class="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 rounded-lg text-xs font-bold hover:bg-emerald-200 transition">+$500</button>
+                        <button onclick="app.quickAdjustCash(-100)" class="px-3 py-1.5 bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 rounded-lg text-xs font-bold hover:bg-rose-200 transition">-$100</button>
+                    </div>
+                </div>
+
+                <!-- Owned Properties & Buildings -->
+                <div>
+                    <h4 class="font-bold text-xs uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+                        <span>Owned Properties & Buildings</span>
+                        <span id="detail-player-prop-count" class="text-slate-500 font-normal">0 properties</span>
+                    </h4>
+                    <div class="space-y-2.5" id="detail-player-properties-list">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                <button onclick="app.bankruptPlayer()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-950/50 dark:text-rose-300 transition">Declare Bankruptcy</button>
+                <button onclick="app.closeModal('modal-player-detail')" class="px-5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-white hover:bg-slate-900 transition">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DICE ROLLER MODAL -->
+    <div id="modal-dice" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+            <h3 class="font-bold text-lg mb-4 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-dice text-indigo-500"></i> Roll Dice
+            </h3>
+            <div class="flex justify-center gap-6 my-6">
+                <div id="die-1" class="w-16 h-16 rounded-2xl bg-indigo-600 text-white text-3xl font-bold flex items-center justify-center shadow-lg transition-transform">
+                    <i class="fa-solid fa-dice-one"></i>
+                </div>
+                <div id="die-2" class="w-16 h-16 rounded-2xl bg-indigo-600 text-white text-3xl font-bold flex items-center justify-center shadow-lg transition-transform">
+                    <i class="fa-solid fa-dice-six"></i>
+                </div>
+            </div>
+            <div id="dice-result-text" class="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-6">
+                Click roll to test your luck!
+            </div>
+            <div class="flex gap-2">
+                <button onclick="app.rollDice()" class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow transition">Roll Again</button>
+                <button onclick="app.closeModal('modal-dice')" class="px-4 py-3 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 rounded-xl font-semibold text-sm transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUCTION MODAL -->
+    <div id="modal-auction" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-gavel text-amber-600"></i> Property Auction
+                </h3>
+                <button onclick="app.closeModal('modal-auction')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Property to Auction</label>
+                    <select id="auction-property-select" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current Highest Bid</span>
+                    <div class="text-3xl font-extrabold text-amber-600 dark:text-amber-400 my-1" id="auction-highest-bid">$0</div>
+                    <div class="text-xs text-slate-500" id="auction-highest-bidder">No bids yet</div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Bidder</label>
+                    <select id="auction-bidder-select" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Bid Amount ($)</label>
+                    <input type="number" id="auction-bid-amount" placeholder="50" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-bold">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-between items-center gap-2">
+                <button onclick="app.placeBid()" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition shadow">Place Bid</button>
+                <button onclick="app.finalizeAuction()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition shadow">Award Property</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BANK MODAL (COLLECT/PAY) -->
+    <div id="modal-bank" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base flex items-center gap-2" id="bank-modal-title">
+                    <i class="fa-solid fa-landmark text-emerald-600"></i> Bank Transaction
+                </h3>
+                <button onclick="app.closeModal('modal-bank')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Player</label>
+                    <select id="bank-player-select" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-medium">
+                        <!-- Rendered dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Amount ($)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
+                        <input type="number" id="bank-amount" value="200" class="w-full pl-8 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Reason / Description</label>
+                    <input type="text" id="bank-reason" placeholder="Passed GO ($200), Tax, Bank Error..." class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="app.closeModal('modal-bank')" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 transition">Cancel</button>
+                <button onclick="app.executeBankTransaction()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition shadow" id="bank-submit-btn">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST / CUSTOM ALERT -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Firebase SDK (Modular v10) -->
+    <script src="Script/script.js" type="module" > </script>
+</body>
+</html>
